@@ -59,6 +59,22 @@ class Netlist:
         self._clauses += [[-o, x, y], [-o, -x, -y], [o, -x, y], [o, x, -y]]
         return out
 
+    def BUF(self, out: str, a: str) -> str:
+        """An alias. Needed when a signal must be renamed rather than computed."""
+        o, x = self._new(out), self.var(a)
+        self._clauses += [[-o, x], [o, -x]]
+        return out
+
+    def CONST(self, out: str, value: bool) -> str:
+        """A signal pinned to a constant, as a unit clause.
+
+        Sequential unrolling needs it for latch reset values; combinational use
+        does not.
+        """
+        o = self._new(out)
+        self._clauses.append([o] if value else [-o])
+        return out
+
     @property
     def clauses(self) -> List[Clause]:
         return [list(c) for c in self._clauses]

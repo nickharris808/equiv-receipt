@@ -40,7 +40,9 @@ def test_proof_of_a_satisfiable_formula_never_verifies():
 
 
 def test_non_rup_lemma_is_rejected_with_a_location():
-    r = E.forward_rup_check([[1, 2]], "1 0\n0\n")
+    # `(-1)` over `(1 OR 2)` is neither RUP nor RAT. (`(1)` would be vacuous RAT
+    # and is legitimately accepted, so it does not test rejection.)
+    r = E.forward_rup_check([[1, 2]], "-1 0\n0\n")
     assert r["verified"] is False and r["failed_index"] == 0
 
 

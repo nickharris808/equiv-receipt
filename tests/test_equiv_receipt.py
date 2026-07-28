@@ -58,15 +58,18 @@ def test_rup_accepts_a_valid_refutation():
 def test_rup_rejects_a_non_rup_lemma():
     """The central soundness property: an unjustified lemma must be refused.
 
-    Base formula ``(1 OR 2)`` is satisfiable. Asserting the unit ``(1)`` does not
-    follow: negating it assumes ``-1``, which propagates ``2`` and stops without
-    a conflict. So the lemma is not RUP and must be rejected.
+    Base formula ``(1 OR 2)`` is satisfiable. Asserting ``(-1)`` does not follow:
+    negating it assumes ``1``, which satisfies the only clause and stops without a
+    conflict, so it is not RUP. Nor is it RAT — the single resolvent on the pivot
+    is ``(-1 OR 2)``, and assuming ``1, -2`` again satisfies the clause.
+
+    (The dual lemma ``(1)`` *is* legitimately accepted, as vacuous RAT: no clause
+    contains ``-1``, so adding it cannot lose a model. That is DRAT behaving
+    correctly, which is why this test uses ``(-1)``.)
     """
-    r = E.forward_rup_check([[1, 2]], "1 0\n0\n")
+    r = E.forward_rup_check([[1, 2]], "-1 0\n")
     assert r["verified"] is False
-    assert r["failed_lemma"] == [1]
-    assert r["failed_index"] == 0
-    assert "not RUP" in r["reason"]
+    assert r["failed_index"] == 0 and r["failed_lemma"] == [-1]
 
 
 def test_rup_rejects_an_empty_proof():
@@ -277,11 +280,18 @@ def test_cli_check_drat(tmp_path):
 
 
 def test_no_third_party_imports():
-    """Standard library only — the property that makes the checker auditable."""
+    """Standard library only — the property that makes the checker auditable.
+
+    Checked against the interpreter's own list of standard-library modules rather
+    than a hand-kept allowlist, so adding a genuine dependency fails here even if
+    nobody remembers to update a set literal.
+    """
     import ast
+    stdlib = getattr(sys, "stdlib_module_names", None) or {
+        "hashlib", "hmac", "json", "pathlib", "typing", "sys", "argparse", "os",
+        "shutil", "subprocess", "tempfile", "itertools", "random", "xml"}
+    allowed = set(stdlib) | {"equiv_receipt", "__future__"}
     src_dir = Path(E.__file__).parent
-    allowed = {"hashlib", "hmac", "json", "pathlib", "typing", "sys", "argparse",
-               "equiv_receipt", "__future__", "os"}
     for py in src_dir.glob("*.py"):
         tree = ast.parse(py.read_text())
         for node in ast.walk(tree):

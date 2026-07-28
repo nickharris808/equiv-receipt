@@ -110,22 +110,153 @@ The bundled `minisolve` is a textbook DPLL with no heuristics. It exists so the 
 self-contained and testable — **it is not a production prover** and it raises rather than grinding
 when an instance exceeds its declared depth.
 
-For real designs, use a proof-emitting solver and check its output:
+For real designs, point the package at a solver that emits DRAT:
+
+```bash
+equiv-receipt solvers          # which are on PATH, and their versions
+equiv-receipt demo --solver cadical
+```
+
+```python
+from equiv_receipt import prove_equivalence, verify_receipt
+from equiv_receipt.solver import refute            # external solver
+
+r = prove_equivalence(f, g, ["a", "b"], refute=refute)
+verify_receipt(r)["verdict"]                       # 'EQUIVALENT'
+```
+
+Any DIMACS-in, text-DRAT-out solver works. `cadical`, `kissat` and `minisat` are known by name;
+anything else is one argv template:
+
+```bash
+export EQUIV_RECEIPT_SOLVER='mysolver --proof {drat} {cnf}'
+```
+
+**The trust story does not change, and that is the point.** The solver is not trusted. It is asked
+for a proof; the proof goes in the receipt; the proof is re-checked by code you can read before any
+verdict is asserted. Swapping in a faster solver buys reach, not credibility. Three things the
+adapter refuses to do:
+
+| Situation | What happens |
+|---|---|
+| Solver says UNSAT but writes no proof | **Error.** An unproven UNSAT is a claim, and this package does not package claims. |
+| Solver writes a proof that does not check | **Error**, and the verdict is withheld. |
+| Solver exits without saying SAT or UNSAT | **Error**, never read as agreement. |
+
+### The checker had to grow up first
+
+A DRAT proof from a real solver contains **RAT** lemmas — the ones emitted when the solver
+eliminates a variable — and deletion lines. The checker now handles both. It also uses two watched
+literals per clause and an index for deletions, which is what makes long proofs checkable at all.
+Measured numbers are in [PERFORMANCE.md](PERFORMANCE.md).
+
+## Sequential equivalence
+
+Circuits with state are not one SAT call. `equiv-receipt` proves them by induction, and every
+obligation carries its own proof:
+
+```python
+from equiv_receipt import prove_sequential_equivalence, verify_seq_receipt
+from equiv_receipt.solver import detect, refute
+
+counter_a = {
+    "inputs": ["en"],
+    "latches": [{"name": "s0", "next": "n0", "init": 0},
+                {"name": "s1", "next": "n1", "init": 0}],
+    "gates": [{"op": "XOR", "out": "n0", "args": ["s0", "en"]},
+              {"op": "AND", "out": "c",  "args": ["s0", "en"]},
+              {"op": "XOR", "out": "n1", "args": ["s1", "c"]},
+              {"op": "OR",  "out": "o",  "args": ["s0", "s1"]}],
+    "outputs": ["o"],
+}
+
+# The same machine: different signal names, and the output written with De Morgan.
+counter_b = {
+    "inputs": ["en"],
+    "latches": [{"name": "t0", "next": "m0", "init": 0},
+                {"name": "t1", "next": "m1", "init": 0}],
+    "gates": [{"op": "XOR", "out": "m0", "args": ["en", "t0"]},
+              {"op": "AND", "out": "cc", "args": ["en", "t0"]},
+              {"op": "XOR", "out": "m1", "args": ["cc", "t1"]},
+              {"op": "NOT", "out": "a",  "args": ["t0"]},
+              {"op": "NOT", "out": "b",  "args": ["t1"]},
+              {"op": "AND", "out": "z",  "args": ["a", "b"]},
+              {"op": "NOT", "out": "o2", "args": ["z"]}],
+    "outputs": ["o2"],
+}
+
+# `refute` uses an external solver when one is on PATH; without it, the bundled
+# demonstration solver handles an instance this small.
+solve = refute if detect() else None
+
+receipt = prove_sequential_equivalence(counter_a, counter_b, k=1, refute=solve)
+res = verify_seq_receipt(receipt)
+
+print(f"verdict     : {res['verdict']}")
+print(f"argument    : {res['method']}")
+print(f"obligations : {res['detail']['n_obligations']}, each with its own proof")
+print(f"re-derived  : {res['ok']}")
+```
 
 ```
-equiv-receipt check-drat miter.cnf miter.drat
-# VERIFIED  <n> lemmas (empty clause derived)
+verdict     : EQUIVALENT
+argument    : register-correspondence
+obligations : 4, each with its own proof
+re-derived  : True
 ```
 
-The checker does not care what produced the DRAT. That is the point: **checking is cheap and
-public, proving is expensive and yours.**
+That is [`examples/sequential.py`](examples/sequential.py) verbatim; a test runs it and
+checks this output, so it cannot rot.
+
+Two arguments are tried, and the receipt records which one carried the result:
+
+1. **Register correspondence** — the invariant "corresponding latches hold equal values", as three
+   obligations: it holds at reset, one step preserves it, and it implies equal outputs.
+2. **k-induction on outputs** — the general argument, for designs whose state encodings do not
+   correspond.
+
+**There are three outcomes, and the third is the honest one.** Both arguments are sound but
+incomplete: they can fail on circuits that really are equivalent, because the assumed states need
+not be reachable. When that happens the verdict is `UNDECIDED-AT-K` — an abstention, exit code 4.
+It is not a failure of the circuits and it is not a pass.
+
+Why two arguments rather than the textbook one: plain k-induction on outputs will essentially never
+prove two independently-encoded state machines equivalent, because an arbitrary assumed state can
+have them in different-but-output-agreeing states from which they diverge. That is not a bug in
+k-induction; it is why practical sequential equivalence checking looks for a state invariant.
+Shipping only the general argument would have been a feature that abstains almost always.
+
+Nothing about the method is new — Sheeran, Singh and Stålmarck introduced k-induction; certifying
+it is a studied problem. What is added here is that the **result arrives as an artifact a third
+party can re-derive.**
+
+### And it closes the encoder gap
+
+A combinational receipt commits the CNF bytes and a *prose* description of the circuits, so a
+verifier can detect a swapped formula but cannot confirm the formula really is those circuits. A
+sequential design is committed as machine-readable data, so the verifier **re-encodes every
+obligation from the design and compares it byte for byte**. A receipt carrying a perfectly valid
+proof of a *different problem* is rejected — `test_a_valid_proof_of_a_different_problem_is_caught`
+asserts exactly that.
+
+## Structured output
+
+```bash
+equiv-receipt verify r.json --format sarif -o equiv.sarif
+equiv-receipt verify-seq s.json --format junit -o results.xml
+```
+
+`text` · `json` · `jsonl` · `sarif` (GitHub's Security tab) · `junit` (any CI test report).
+
+Neither SARIF nor JUnit has an "abstained" state, so `UNDECIDED-AT-K` renders as a **failure with
+the reason attached**. A green check mark on a question that was not answered is precisely the
+confident wrong answer this package exists to avoid.
 
 ## Scope
 
-Combinational equivalence via the bundled encoder; arbitrary CNF/DRAT via the checker. Sequential
-equivalence, timing, and X-semantics are **not** covered — a sequential conclusion rests on a
-composition argument that a propositional proof format cannot express, which needs a different
-receipt design.
+Combinational equivalence via the bundled encoder; sequential equivalence by induction over the
+JSON netlist format; arbitrary CNF/DRAT via the checker. Timing and X-semantics are **not**
+covered.
 
 ## Beyond this package
 
