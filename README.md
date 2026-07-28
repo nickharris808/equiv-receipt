@@ -138,6 +138,18 @@ part you should never have to trust anyone for.
 
 Apache-2.0.
 
+## Honest scope — what this proves, and what it does not
+
+| Question | Answer |
+|---|---|
+| Does the committed proof actually refute the committed formula? | **Yes, every lemma re-checked.** |
+| Does that formula correspond to the two circuits named in the receipt? | **Yes** — the encoder identity and both descriptions are committed, so a swap is detectable. |
+| Were the descriptions altered after the proof was made? | **Yes, caught** by the hash chain. |
+| Are the circuits equivalent under *timing*, or with state, or under X-semantics? | **Never checked.** Combinational only. |
+| Is the design *correct*? | **Never checked.** Equivalence is not correctness — two circuits can agree and both be wrong. |
+
+A malformed proof or formula is **rejected**, never silently parsed into something else.
+
 ---
 
 ## The rest of the toolkit
