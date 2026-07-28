@@ -1,10 +1,11 @@
 # equiv-receipt
 
+[![ci](https://github.com/nickharris808/equiv-receipt/actions/workflows/ci.yml/badge.svg)](https://github.com/nickharris808/equiv-receipt/actions/workflows/ci.yml)
 ![license](https://img.shields.io/badge/license-Apache--2.0-blue)
 ![python](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue)
 ![dependencies](https://img.shields.io/badge/dependencies-none-brightgreen)
 ![tests](https://img.shields.io/badge/tests-32%20passing-brightgreen)
-![status](https://img.shields.io/badge/status-pre--release-orange)
+[![ci](https://github.com/nickharris808/equiv-receipt/actions/workflows/ci.yml/badge.svg)](https://github.com/nickharris808/equiv-receipt/actions/workflows/ci.yml)
 
 **An AI edited your RTL. Prove it still does the same thing — with a receipt anyone can re-check,
 using nothing but the Python standard library.**
@@ -18,11 +19,10 @@ Zero dependencies. The checker is a few hundred lines and you are meant to read 
 
 ## Install
 
-> **Status: pre-release.** Not yet on PyPI. Until it is published, install from a
-> checkout:
+> **Not yet on PyPI.** Install from the repository — it works exactly the same:
 >
 > ```
-> pip install ./equiv-receipt
+> pip install git+https://github.com/nickharris808/equiv-receipt.git
 > ```
 
 ```
@@ -138,3 +138,27 @@ part you should never have to trust anyone for.
 ## License
 
 Apache-2.0.
+
+---
+
+## The rest of the toolkit
+
+One idea, six pieces: **a recorded verdict is a claim to be checked, never an input to be trusted.**
+
+| | |
+|---|---|
+| [**lcert-verify**](https://github.com/nickharris808/lcert-verify) | Re-derive a manufacturing certificate's verdict. Stdlib only. |
+| [**equiv-receipt**](https://github.com/nickharris808/equiv-receipt) | Prove two circuits equivalent, with a receipt anyone can re-check. |
+| [**prereg-seal**](https://github.com/nickharris808/prereg-seal) | Seal acceptance criteria before you measure. |
+| [**cert-atlas**](https://github.com/nickharris808/cert-atlas) | 21 labelled forgeries and a metric no degenerate verifier can win. |
+| [**certified-mcp**](https://github.com/nickharris808/certified-mcp) | The above, as tools your AI agent can call. |
+| [**lcert-verify-web**](https://github.com/nickharris808/lcert-verify-web) | The verifier in a browser. Nothing uploaded. |
+
+**Try it now, no install:** [🔏 the verifier Space](https://huggingface.co/spaces/nickh007/cert-verifier) ·
+**Browse the forgeries:** [📊 the atlas dataset](https://huggingface.co/datasets/nickh007/cert-atlas)
+
+### Where the free edition stops
+
+Everything here **checks**. None of it **produces** a certificate that is physically meaningful —
+that needs sound enclosures over real process models, which is a separate commercial product. If
+you need certificates rather than a way to check them, that is the conversation to have.
