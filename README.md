@@ -5,7 +5,6 @@
 ![python](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue)
 ![dependencies](https://img.shields.io/badge/dependencies-none-brightgreen)
 ![tests](https://img.shields.io/badge/tests-32%20passing-brightgreen)
-[![ci](https://github.com/nickharris808/equiv-receipt/actions/workflows/ci.yml/badge.svg)](https://github.com/nickharris808/equiv-receipt/actions/workflows/ci.yml)
 
 **An AI edited your RTL. Prove it still does the same thing — with a receipt anyone can re-check,
 using nothing but the Python standard library.**
