@@ -20,7 +20,7 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from .dimacs import parse_dimacs
+from .dimacs import CNFParseError, parse_dimacs  # noqa: F401
 from .rup import forward_rup_check
 
 FORMAT = "equiv-receipt/1"
@@ -184,7 +184,12 @@ def verify_receipt(receipt: Dict) -> Dict:
 
     # 3. re-derive the verdict — never read it
     recorded = (by_kind.get("verdict") or {}).get("verdict")
-    clauses = parse_dimacs(payload.get("cnf", ""))
+    try:
+        clauses = parse_dimacs(payload.get("cnf", ""))
+    except ValueError as exc:
+        # An unparseable formula cannot be reasoned about. Reject; do not crash.
+        return {"ok": False, "verdict": None, "detail": {},
+                "errors": errors + [f"committed formula is malformed: {exc}"]}
     rederived, detail = None, {}
     if payload.get("drat", "").strip():
         chk = forward_rup_check(clauses, payload["drat"])

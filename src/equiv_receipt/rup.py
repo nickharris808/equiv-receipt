@@ -53,18 +53,33 @@ def bcp(clauses: Sequence[Clause], assumed: Sequence[int]) -> Tuple[bool, Dict[i
     return False, assign
 
 
+class MalformedProof(ValueError):
+    """A DRAT text that cannot be parsed. Raised only by strict callers."""
+
+
 def parse_drat(drat_text: str) -> List[Tuple[str, Clause]]:
-    """Parse DRAT into ``("a"|"d", clause)`` steps. Comment lines (``c``) are skipped."""
+    """Parse DRAT into ``("a"|"d", clause)`` steps. Comment lines (``c``) are skipped.
+
+    Raises :class:`MalformedProof` on unparseable input. Callers that must not
+    crash should use :func:`forward_rup_check`, which converts this into a
+    *rejection* — an unreadable proof proves nothing, which is a verdict, not an
+    error condition.
+    """
     steps: List[Tuple[str, Clause]] = []
-    for raw in drat_text.splitlines():
+    for lineno, raw in enumerate(drat_text.splitlines(), 1):
         line = raw.strip()
         if not line or line.startswith("c"):
             continue
         toks = line.split()
-        if toks[0] == "d":
-            steps.append(("d", [int(t) for t in toks[1:] if int(t) != 0]))
-        else:
-            steps.append(("a", [int(t) for t in toks if int(t) != 0]))
+        try:
+            if toks[0] == "d":
+                steps.append(("d", [int(t) for t in toks[1:] if int(t) != 0]))
+            else:
+                steps.append(("a", [int(t) for t in toks if int(t) != 0]))
+        except ValueError as exc:
+            raise MalformedProof(
+                f"line {lineno}: {raw.strip()[:60]!r} is not a DRAT step "
+                f"(expected space-separated integers ending in 0)") from exc
     return steps
 
 
@@ -81,7 +96,16 @@ def forward_rup_check(clauses: Sequence[Clause], drat_text: str) -> dict:
     active: List[Clause] = [list(c) for c in clauses]
     n_lemmas = 0
 
-    for idx, (op, lits) in enumerate(parse_drat(drat_text)):
+    # An unreadable proof does not prove anything. That is a REJECTION, not a
+    # crash: a checker that raises on hostile input is a denial of service, and a
+    # caller catching broadly might mistake the exception for something else.
+    try:
+        steps = parse_drat(drat_text)
+    except MalformedProof as exc:
+        return {"verified": False, "n_lemmas": 0,
+                "reason": f"malformed proof: {exc}"}
+
+    for idx, (op, lits) in enumerate(steps):
         if op == "d":
             key = sorted(lits)
             for i, cl in enumerate(active):
