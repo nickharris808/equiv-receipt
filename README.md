@@ -156,6 +156,8 @@ A malformed proof or formula is **rejected**, never silently parsed into somethi
 
 One idea, six pieces: **a recorded verdict is a claim to be checked, never an input to be trusted.**
 
+The whole story, and the objections answered, live at **[certified-oss](https://github.com/nickharris808/certified-oss)** — start there if this is the first of the six you have opened.
+
 | | |
 |---|---|
 | [**lcert-verify**](https://github.com/nickharris808/lcert-verify) | Re-derive a manufacturing certificate's verdict. Stdlib only. |
