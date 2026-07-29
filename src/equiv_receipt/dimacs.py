@@ -36,11 +36,13 @@ def parse_dimacs(text: str, *, strict: bool = True) -> List[Clause]:
                         f"line {lineno}: malformed header {line[:40]!r} "
                         f"(expected 'p cnf <vars> <clauses>')")
                 try:
-                    int(parts[2])
-                    int(parts[3])
+                    n_vars, n_clauses = int(parts[2]), int(parts[3])
                 except ValueError as exc:
                     raise CNFParseError(
                         f"line {lineno}: header counts are not integers: {line[:40]!r}") from exc
+                if n_vars < 0 or n_clauses < 0:
+                    raise CNFParseError(
+                        f"line {lineno}: header counts cannot be negative: {line[:40]!r}")
             saw_header = True
             continue
         for tok in line.split():
@@ -61,7 +63,10 @@ def parse_dimacs(text: str, *, strict: bool = True) -> List[Clause]:
             raise CNFParseError(
                 "final clause is not terminated by 0 — the formula is truncated")
         clauses.append(cur)
-    if strict and not saw_header and clauses:
+    if strict and not saw_header:
+        # Also when there are zero clauses: an empty or headerless document is
+        # almost always the wrong file, and returning "a formula with no clauses"
+        # lets a caller reason confidently about something that is not on disk.
         raise CNFParseError(
             "no 'p cnf' header found — refusing to guess the formula's shape; "
             "pass strict=False to parse anyway")

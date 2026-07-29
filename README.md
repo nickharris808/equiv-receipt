@@ -285,9 +285,9 @@ A malformed proof or formula is **rejected**, never silently parsed into somethi
 
 ## The rest of the toolkit
 
-One idea, six pieces: **a recorded verdict is a claim to be checked, never an input to be trusted.**
+**A recorded verdict is a claim to be checked, never an input to be trusted.** Nine repositories are built on it.
 
-The whole story, and the objections answered, live at **[certified-oss](https://github.com/nickharris808/certified-oss)** — start there if this is the first of the six you have opened.
+The whole story, and the objections answered, live at **[certified-oss](https://github.com/nickharris808/certified-oss)** — start there if this is the first one you have opened.
 
 | | |
 |---|---|
@@ -306,3 +306,25 @@ The whole story, and the objections answered, live at **[certified-oss](https://
 Everything here **checks**. None of it **produces** a certificate that is physically meaningful —
 that needs sound enclosures over real process models, which is a separate commercial product. If
 you need certificates rather than a way to check them, that is the conversation to have.
+
+## Documentation
+
+- **[TUTORIAL.md](TUTORIAL.md)** — a worked walkthrough
+- **[CLI.md](CLI.md)** — every flag, generated from the parser
+- **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** — the errors you will actually hit
+- **[PERFORMANCE.md](PERFORMANCE.md)** — measured, including what was not optimised
+- **[CONTRIBUTING.md](CONTRIBUTING.md)** — Contributing
+
+Portfolio-wide: **[Tutorial](https://github.com/nickharris808/certified-oss/blob/main/TUTORIAL.md)**
+· **[Concepts](https://github.com/nickharris808/certified-oss/blob/main/CONCEPTS.md)**
+· **[FAQ](https://github.com/nickharris808/certified-oss/blob/main/FAQ.md)**
+· **[Architecture](https://github.com/nickharris808/certified-oss/blob/main/ARCHITECTURE.md)**
+· **[API reference](https://nickharris808.github.io/certified-oss/api/)**
+
+---
+
+**A recorded verdict is a claim to be checked, never an input to be trusted.**
+
+`equiv-receipt` is one of nine repositories built on that. The whole story, and the objections answered,
+live at **[certified-oss](https://github.com/nickharris808/certified-oss)** — start there if this
+is the first one you have opened.

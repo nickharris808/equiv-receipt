@@ -369,12 +369,21 @@ def verify_seq_receipt(receipt: Dict) -> Dict:
     design** and compared, so the formula is proven to be the circuits.
     """
     errors: List[str] = []
+    if not isinstance(receipt, dict):
+        return {"ok": False, "verdict": None, "errors": [
+            f"a receipt must be an object, got {type(receipt).__name__}"]}
     if receipt.get("format") != SEQ_FORMAT:
         return {"ok": False, "verdict": None,
                 "errors": [f"unknown format {receipt.get('format')!r}"]}
 
     records = receipt.get("records") or []
     payload = receipt.get("payload") or {}
+    if not isinstance(records, list) or not all(isinstance(r, dict) for r in records):
+        return {"ok": False, "verdict": None,
+                "errors": ["records must be a list of objects"]}
+    if not isinstance(payload, dict):
+        return {"ok": False, "verdict": None,
+                "errors": [f"payload must be an object, got {type(payload).__name__}"]}
 
     prev = GENESIS
     for i, rec in enumerate(records):
@@ -387,7 +396,11 @@ def verify_seq_receipt(receipt: Dict) -> Dict:
     by_kind = {r.get("kind"): r for r in records}
 
     a, b = payload.get("design_a"), payload.get("design_b")
-    k = int(receipt.get("k", 0))
+    try:
+        k = int(receipt.get("k", 0))
+    except (TypeError, ValueError):
+        return {"ok": False, "verdict": None,
+                "errors": [f"k must be an integer, got {receipt.get('k')!r}"]}
     try:
         validate_design(a)
         validate_design(b)
@@ -399,6 +412,13 @@ def verify_seq_receipt(receipt: Dict) -> Dict:
         errors.append("a design does not match its committed digest")
 
     obligations = payload.get("obligations") or []
+    if not isinstance(obligations, list):
+        return {"ok": False, "verdict": None, "k": k,
+                "errors": errors + [f"obligations must be a list, got "
+                                    f"{type(obligations).__name__}"]}
+    if not all(isinstance(o, dict) for o in obligations):
+        return {"ok": False, "verdict": None, "k": k,
+                "errors": errors + ["every obligation must be an object"]}
     committed = (by_kind.get("obligations") or {}).get("digests") or []
     if len(obligations) != len(committed):
         errors.append("obligation count does not match the commitment")

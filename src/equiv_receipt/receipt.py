@@ -144,11 +144,34 @@ def verify_receipt(receipt: Dict) -> Dict:
     committed counterexample.
     """
     errors: List[str] = []
+    # Everything below is read defensively. A receipt of the wrong shape is a
+    # REJECTION with a reason, never an exception: a checker that raises on
+    # hostile input is a denial of service and tells the caller nothing.
+    if not isinstance(receipt, dict):
+        return {"ok": False, "verdict": None, "detail": {},
+                "errors": [f"a receipt must be an object, got "
+                           f"{type(receipt).__name__}"]}
     if receipt.get("format") != FORMAT:
-        return {"ok": False, "errors": [f"unknown format {receipt.get('format')!r}"]}
+        return {"ok": False, "verdict": None, "detail": {},
+                "errors": [f"unknown format {receipt.get('format')!r}"]}
 
     payload = receipt.get("payload") or {}
     records = receipt.get("records") or []
+    if not isinstance(payload, dict):
+        return {"ok": False, "verdict": None, "detail": {},
+                "errors": [f"payload must be an object, got {type(payload).__name__}"]}
+    if not isinstance(records, list):
+        return {"ok": False, "verdict": None, "detail": {},
+                "errors": [f"records must be a list, got {type(records).__name__}"]}
+    if not all(isinstance(r, dict) for r in records):
+        return {"ok": False, "verdict": None, "detail": {},
+                "errors": ["every record must be an object"]}
+    try:
+        int(receipt.get("seed", 1))
+    except (TypeError, ValueError):
+        return {"ok": False, "verdict": None, "detail": {},
+                "errors": [f"seed must be an integer, got "
+                           f"{receipt.get('seed')!r}"]}
 
     # 1. chain integrity
     prev = GENESIS
@@ -164,6 +187,11 @@ def verify_receipt(receipt: Dict) -> Dict:
     by_kind = {r.get("kind"): r for r in records}
 
     # 2. commitment over the payload
+    for key in ("description_a", "description_b", "encoder_id", "cnf", "drat"):
+        if key in payload and not isinstance(payload[key], str):
+            return {"ok": False, "verdict": None, "detail": {},
+                    "errors": [f"payload {key!r} must be a string, got "
+                               f"{type(payload[key]).__name__}"]}
     blobs = {k: str(payload.get(k, "")).encode("utf-8")
              for k in ("description_a", "description_b", "encoder_id", "cnf", "drat")}
     commitment = by_kind.get("commitment", {})
