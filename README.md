@@ -4,7 +4,7 @@
 ![license](https://img.shields.io/badge/license-Apache--2.0-blue)
 ![python](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue)
 ![dependencies](https://img.shields.io/badge/dependencies-none-brightgreen)
-![tests](https://img.shields.io/badge/tests-32%20passing-brightgreen)
+![tests](https://img.shields.io/badge/tests-335%20passing-brightgreen)
 
 **An AI edited your RTL. Prove it still does the same thing — with a receipt anyone can re-check,
 using nothing but the Python standard library.**
@@ -320,6 +320,15 @@ Portfolio-wide: **[Tutorial](https://github.com/nickharris808/certified-oss/blob
 · **[FAQ](https://github.com/nickharris808/certified-oss/blob/main/FAQ.md)**
 · **[Architecture](https://github.com/nickharris808/certified-oss/blob/main/ARCHITECTURE.md)**
 · **[API reference](https://nickharris808.github.io/certified-oss/api/)**
+
+## Licence, citation, contributing
+
+Apache-2.0 — see [LICENSE](LICENSE). If you use this, please cite it:
+[CITATION.cff](CITATION.cff).
+
+The most valuable contribution is **a forgery this project fails to catch** —
+see [CONTRIBUTING.md](CONTRIBUTING.md) and the
+[portfolio-wide guide](https://github.com/nickharris808/certified-oss/blob/main/CONTRIBUTING.md).
 
 ---
 
