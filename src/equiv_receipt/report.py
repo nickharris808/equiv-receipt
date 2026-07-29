@@ -64,7 +64,10 @@ def to_sarif(res: Dict, source: str = "receipt") -> str:
         results.append({
             "ruleId": "equiv-receipt/verdict",
             "level": f["level"],
-            "message": {"text": message},
+            # The verdict name goes in the message and in properties: a reader
+            # in a code-scanning UI needs to know WHICH outcome this is.
+            "message": {"text": f"{f['verdict']}: {message}"},
+            "properties": {"verdict": f["verdict"]},
             "locations": [{"physicalLocation": {
                 "artifactLocation": {"uri": source}}}],
         })
